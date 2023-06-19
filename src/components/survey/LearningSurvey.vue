@@ -13,22 +13,15 @@
           <label for="rating-poor">Poor</label>
         </div>
         <div class="form-control">
-          <input
-            type="radio"
-            id="rating-average"
-            value="average"
-            name="rating"
-            v-model="chosenRating"
-          />
+          <input type="radio" id="rating-average" value="average" name="rating" v-model="chosenRating" />
           <label for="rating-average">Average</label>
         </div>
         <div class="form-control">
           <input type="radio" id="rating-great" value="great" name="rating" v-model="chosenRating" />
           <label for="rating-great">Great</label>
         </div>
-        <p
-          v-if="invalidInput"
-        >One or more input fields are invalid. Please check your provided data.</p>
+        <p v-if="invalidInput">One or more input fields are invalid. Please check your provided data.</p>
+        <p v-if="error">{{ error }}</p>
         <div>
           <base-button>Submit</base-button>
         </div>
@@ -41,37 +34,56 @@
 export default {
   data() {
     return {
-      enteredName: '',
+      enteredName: "",
       chosenRating: null,
       invalidInput: false,
+      error: null,
     };
   },
-/*   emits: ['survey-submit'], */
+  /*   emits: ['survey-submit'], */
   methods: {
     submitSurvey() {
-      if (this.enteredName === '' || !this.chosenRating) {
+      if (this.enteredName === "" || !this.chosenRating) {
         this.invalidInput = true;
         return;
       }
       this.invalidInput = false;
 
-     /*  this.$emit('survey-submit', {
+      /*  this.$emit('survey-submit', {
         userName: this.enteredName,
         rating: this.chosenRating,
       }); */
+      this.error = null;
+      fetch("https://survey-vue-564c4-default-rtdb.europe-west1.firebasedatabase.app/surveys.json", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: this.enteredName,
+          rating: this.chosenRating,
+        }),
+      }).then((response) => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          return response.json().then((data) => {
+            let errorMessage = "Could not save your data. Please try again later.";
+            if (data && data.error && data.error.message) {
+              errorMessage = data.error.message;
+            }
+            throw new Error(errorMessage);
+          });
+        }
+      }).then((data) => {
+        console.log(data);
+        
+      }).catch((error) => {
+        this.error = error.message || "Could not save your data. Please try again later.";
+      })
+      
 
-          fetch('https://survey-vue-564c4-default-rtdb.europe-west1.firebasedatabase.app/surveys.json', {
-              method: 'POST',
-              headers: {
-                    'Content-Type': 'application/json',
-              },
-                body: JSON.stringify({
-                        name: this.enteredName,
-                        rating: this.chosenRating,
-                }),
-})
-
-      this.enteredName = '';
+      this.enteredName = "";
       this.chosenRating = null;
     },
   },
@@ -83,7 +95,7 @@ export default {
   margin: 0.5rem 0;
 }
 
-input[type='text'] {
+input[type="text"] {
   display: block;
   width: 20rem;
   margin-top: 0.5rem;
